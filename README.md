@@ -211,7 +211,19 @@ install the following module to set the database user limits parameters
       group                  => 'dba',
       group_install          => 'oinstall',
       group_oper             => 'oper',
-      downloadDir            => '/data/install',
+      downloadDir            => '/var/tmp/install',
+      zipExtract             => true,
+      puppetDownloadMntPoint => $puppetDownloadMntPoint,
+    }
+
+    # or using the defaults, same as the above
+    oradb::installdb{ '12.1.0.2_Linux-x86-64':
+      version                => '12.1.0.2',
+      file                   => 'V46095-01',
+      databaseType           => 'SE',
+      oracleBase             => '/oracle',
+      oracleHome             => '/oracle/product/12.1/db',
+      bashProfile            => true,
       zipExtract             => true,
       puppetDownloadMntPoint => $puppetDownloadMntPoint,
     }
@@ -229,7 +241,7 @@ or with zipExtract ( does not download or extract , software is in /install/linu
       group                  => 'dba',
       group_install          => 'oinstall',
       group_oper             => 'oper',
-      downloadDir            => '/install',
+      downloadDir            => '/var/tmp/install',
       zipExtract             => false,
     }
 
@@ -247,7 +259,7 @@ or
       group                  => 'dba',
       group_install          => 'oinstall',
       group_oper             => 'oper',
-      downloadDir            => '/install',
+      downloadDir            => '/var/tmp/install',
       zipExtract             => true,
       puppetDownloadMntPoint => $puppetDownloadMntPoint,
     }
@@ -264,7 +276,7 @@ or
       group                  => 'dba',
       group_install          => 'oinstall',
       group_oper             => 'oper',
-      downloadDir            => '/install',
+      downloadDir            => '/var/tmp/install',
       zipExtract             => true,
       puppetDownloadMntPoint => $puppetDownloadMntPoint,
     }
@@ -281,7 +293,7 @@ or
       group         => 'dba',
       group_install => 'oinstall',
       group_oper    => 'oper',
-      downloadDir   => '/install',
+      downloadDir   => '/var/tmp/install',
       zipExtract    => true,
      }
 
@@ -300,7 +312,18 @@ For opatchupgrade you need to provide the Oracle support csiNumber and supportId
       opversion              => '11.2.0.3.6',
       user                   => 'oracle',
       group                  => 'dba',
-      downloadDir            => '/install',
+      downloadDir            => '/var/tmp/install',
+      puppetDownloadMntPoint => $puppetDownloadMntPoint,
+      require                =>  Oradb::Installdb['112030_Linux-x86-64'],
+    }
+
+    # or using the defaults
+    oradb::opatchupgrade{'112000_opatch_upgrade':
+      oracleHome             => '/oracle/product/11.2/db',
+      patchFile              => 'p6880880_112000_Linux-x86-64.zip',
+      csiNumber              => undef,
+      supportId              => undef,
+      opversion              => '11.2.0.3.6',
       puppetDownloadMntPoint => $puppetDownloadMntPoint,
       require                =>  Oradb::Installdb['112030_Linux-x86-64'],
     }
@@ -316,6 +339,19 @@ Opatch
       user                   => hiera('oracle_os_user'),
       group                  => 'oinstall',
       downloadDir            => hiera('oracle_download_dir'),
+      ocmrf                  => true,
+      require                => Oradb::Opatchupgrade['112000_opatch_upgrade_db'],
+      puppetDownloadMntPoint => hiera('oracle_source'),
+    }
+
+    # or using the defaults
+
+    # october 2014 11.2.0.4.4 patch
+    oradb::opatch{'19121551_db_patch':
+      ensure                 => 'present',
+      oracleProductHome      => hiera('oracle_home_dir'),
+      patchId                => '19121551',
+      patchFile              => 'p19121551_112040_Linux-x86-64.zip',
       ocmrf                  => true,
       require                => Oradb::Opatchupgrade['112000_opatch_upgrade_db'],
       puppetDownloadMntPoint => hiera('oracle_source'),
@@ -399,7 +435,15 @@ Oracle net
       version      => '11.2' or "12.1",
       user         => 'oracle',
       group        => 'dba',
-      downloadDir  => '/install',
+      downloadDir  => '/var/tmp/install',
+      dbPort       => '1521', #optional
+      require      => Oradb::Opatch['14727310_db_patch'],
+    }
+
+    # or using the defaults
+    oradb::net{ 'config net8':
+      oracleHome   => '/oracle/product/11.2/db',
+      version      => '11.2',
       dbPort       => '1521', #optional
       require      => Oradb::Opatch['14727310_db_patch'],
     }
@@ -412,7 +456,6 @@ Listener
       user         => 'oracle',
       group        => 'dba',
       action       => 'stop',
-      require      => Oradb::Net['config net8'],
     }
 
     oradb::listener{'start listener':
@@ -421,7 +464,13 @@ Listener
       user         => 'oracle',
       group        => 'dba',
       action       => 'start',
-      require      => Oradb::Listener['stop listener'],
+    }
+
+    # or using the defaults
+    oradb::listener{'start listener':
+      oracleBase   => '/oracle',
+      oracleHome   => '/oracle/product/11.2/db',
+      action       => 'start',
     }
 
 Database instance
