@@ -25,8 +25,8 @@ define oradb::installem_agent(
 )
 {
 
-  if (!( $version in ['12.1.0.4'])){
-    fail('Unrecognized em agent version, use 12.1.0.4')
+  if (!( $version in ['12.1.0.4', '12.1.0.5'])){
+    fail('Unrecognized em agent version, use 12.1.0.4|12.1.0.5')
   }
 
   # check if the oracle software already exists
